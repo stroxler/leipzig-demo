@@ -13,32 +13,39 @@
 (defn cycle-times [n vec]
   (take-cycle (* n (count vec)) vec))
 
-;; the tune -------------------
+;; the instruments and methods -------------------
 
-(definst bass [freq 110]
+(definst inst:bass [freq 110]
   (-> freq
       saw
       (rlpf (line:kr (* freq 10) freq 1))
       (* (env-gen (perc 0.1 0.4) :action FREE))))
 
-(defn bassline [root]
+(defmethod live/play-note :bass [{hertz :pitch}]
+  (inst:bass hertz))
+
+
+;; the parts --------------------
+
+(defn part-bass:riff [root]
   (->>
    (phrase (cycle-times 2 [1 1/2 1/2 1 1]) (cycle-times 2 [0 -3 -1 0 2]))
    (where :pitch (scale/from root))
    (where :pitch (comp scale/lower scale/lower))
    (where :part (is :bass))))
 
-(def progression [0 0 3 0 4 0])
+(def part-bass:progression [0 0 3 0 4 0])
 
-(def blues-track
+(def part:bass (mapthen part-bass:riff part-bass:progression))
+
+;; the track --------------
+
+(def track:blues
   (->>
-   (mapthen bassline progression)
+   part:bass
    (where :pitch (comp temperament/equal scale/E scale/minor))
    (where :time (bpm 90))
    (where :duration (bpm 90))))
-
-(defmethod live/play-note :bass [{hertz :pitch}]
-  (bass hertz))
 
 (comment
   ;; overtone stuff
@@ -50,7 +57,7 @@
 
 (comment
   ;; leipzig stuff
-  (live/jam (var blues-track))
+  (live/jam (var track:blues))
   (live/stop)
   (live/play track)
   )
